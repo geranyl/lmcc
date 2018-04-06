@@ -3,7 +3,7 @@
 var callCount = 0;
 var objectives = [];
 
-var FLAG = '';//what to print
+var FLAG = 'key';//what to print
 
 function returnSum(val){
 	var transitionIndex = val.id.split(/-|\./);
@@ -220,12 +220,9 @@ function listOnlyKeyObjectives(){
 	str+='<h2>Key Objectives</h2>';
 	for (var i=0; i<objectives.length; i++){
 		var obj = objectives[i];
-		createOrganizedDataDetails(obj);
 		
-
-		
-			str+='<p><h3>'+obj.title+'</h3>';
-			str+=obj.crossReferences;
+			str+='<p><h3>'+obj.id+' '+obj.title+'</h3>';
+			str+=obj.crossReferences||'';
 
 
 			for (var j=0; j<obj.formattedSections.length; j++){
