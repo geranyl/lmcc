@@ -1,5 +1,10 @@
 
 
+var callCount = 0;
+var objectives = [];
+
+var FLAG = '';//what to print
+
 function returnSum(val){
 	var transitionIndex = val.id.split(/-|\./);
 	var summation = parseInt(transitionIndex[0]);
@@ -15,47 +20,10 @@ function sortByIndex(x,y){
 	return returnSum(x) - returnSum(y);
 }
 
-var callCount = 0;
-var objectives = [];
-
-function addObjectiveDetails(obj, completionCount){
-	//manage non id based entries
-
-		function count(){
-			callCount++;
-			$('#count').text(callCount);
-	  		if(callCount == completionCount){
-	  			console.log("all done");
-	  			$('#loading').remove();
-	  			printToScreen();
-	  		}
-		}
-
-		if(!parseInt(obj.id)) {
-			count();
-	  		return;
-		}
-		$.ajax({
-		crossOrigin: "true",
-	  	method: "GET",
-	  	url: "https://apps.mcc.ca/ObjectivesWS/ObjectivesWS.asmx/GetXMLObjective?lang=en&id="+obj.id,
-	  	dataType:"text"
-		}).fail(function(err) {
-	    console.log( "error",err );
-	  	})
-	  	.done(function(data) {
-	   	 console.log( "success");
-	   	 obj.detailsJSON = $.xml2json(data);
-	   	 obj.detailsXML = data;
-	  	})
-	  	.always(function(){
-	  		count();
-	  	});
-  
+function createAnchor(str){
+	str = str.replace(/(\d|\W)+/g,'-').toLowerCase();
+	return str.replace(/^-|-$/gm,'');
 }
-
-
-
 
 
 function getBaseHelper($obj,list){
@@ -95,6 +63,115 @@ function flattenArr(arr){
 	return flattenArrHelper(arr,'');
 }	
 
+function addObjectiveDetails(obj, completionCount){
+	//manage non id based entries
+
+		function count(){
+			callCount++;
+			$('#count').text(callCount);
+	  		if(callCount == completionCount){
+	  			console.log("all done");
+	  			$('#loading').remove();
+	  			printToScreen();
+	  		}
+		}
+
+		if(!parseInt(obj.id)) {
+			count();
+	  		return;
+		}
+		$.ajax({
+		crossOrigin: "true",
+	  	method: "GET",
+	  	url: "https://apps.mcc.ca/ObjectivesWS/ObjectivesWS.asmx/GetXMLObjective?lang=en&id="+obj.id,
+	  	dataType:"text"
+		}).fail(function(err) {
+	    console.log( "error",err );
+	  	})
+	  	.done(function(data) {
+	   	 console.log( "success");
+	   	 obj.detailsJSON = $.xml2json(data);
+	   	 obj.detailsXML = data;
+	  	})
+	  	.always(function(){
+	  		count();
+	  	});
+  
+}
+
+
+function createOrganizedDataDetails(obj){
+
+	if(!obj.detailsJSON){
+		return;	
+	} 
+
+	//require xml to keep appropriate order for nested lists
+	var xmlDoc = $.parseXML(obj.detailsXML);
+	var $xmlSnippet = $(xmlDoc).find('section');
+	
+		//objectives that have been remapped - no section content
+	if(obj.detailsJSON.objective.crossRef){
+		var cross = obj.detailsJSON.objective.crossRef;
+		var wrapper = [];
+		if(!Array.isArray(cross)){
+			wrapper.push(cross);
+		}else{
+			wrapper = cross;
+		}
+		obj.crossReferences='';
+		for (var i=0; i<wrapper.length; i++){
+			obj.crossReferences += ''+wrapper[i]['$']['intro']+':<a href="#'+createAnchor(wrapper[i]['_'])+'">'+wrapper[i]['_']+'</a>';
+		}
+	}
+
+	obj.formattedSections = [];
+
+	$.each(obj.detailsJSON.objective.section,function(index,value){
+
+		var elem='';
+		var title = value['$'].title;
+
+		var crossReferences = '';
+
+		if(title){
+			//inline crossreferences
+			if(typeof value.p == "object" && value.p.crossRef){
+				value.p.crossRef.forEach(function(e){
+					crossReferences+=e['_']+', ';
+				});
+				crossReferences = crossReferences.slice(0,-2);
+			}
+
+			//Add any bulleted lists to current section
+			var $currentSection = $xmlSnippet.filter("[title='"+title+"']");
+		
+
+			$.each($currentSection.children(), function(i,val){
+				if($(this).is('p')){
+					elem+='<p>'+$(this).text()+'</p>';
+				}else if ($(this).is('list')){
+					var bullets = getBase($(this),[]);	
+					elem += '<ul>'+flattenArr(bullets)+'</ul>';
+				}
+
+			});
+			
+			
+			var sectionObj = {'section':{}};
+			
+			sectionObj['sectionTitle'] = title;
+			sectionObj['bullets'] = elem;
+			sectionObj['crossReferences'] = crossReferences;
+			
+
+			obj.formattedSections.push(sectionObj);
+			
+		}
+	});
+	
+	return obj;
+}
 
 
 function addDetails(obj){
@@ -115,15 +192,17 @@ function addDetails(obj){
 		var wrapper = [];
 		if(!Array.isArray(cross)){
 			wrapper.push(cross);
+		}else{
+			wrapper = cross;
 		}
+		obj.crossReferences='';
 		for (var i=0; i<wrapper.length; i++){
-			obj.crossReferences = ''+wrapper[i]['$']['intro']+':<a href="#'+createAnchor(wrapper[i]['_'])+'">'+wrapper[i]['_']+'</a>';
-			str+=obj.crossReferences;
+			obj.crossReferences += ''+wrapper[i]['$']['intro']+':<a href="#'+createAnchor(wrapper[i]['_'])+'">'+wrapper[i]['_']+'</a>';
 		}
 	}
 	
 	
-
+	str+=obj.crossReferences;
 
 	str+='<div class="Rtable Rtable--1cols Rtable--collapse">';
 
@@ -170,12 +249,47 @@ function addDetails(obj){
 	return str;	
 }
 
-function createAnchor(str){
-	str = str.replace(/(\d|\W)+/g,'-').toLowerCase();
-	return str.replace(/^-|-$/gm,'');
+
+
+
+function listOnlyKeyObjectives(){
+	var str = '';
+	str+='<h2>Key Objectives</h2>';
+	for (var i=0; i<objectives.length; i++){
+		var obj = objectives[i];
+		createOrganizedDataDetails(obj);
+		
+
+		
+			str+='<p><h3>'+obj.title+'</h3>';
+			str+=obj.crossReferences;
+
+
+			for (var j=0; j<obj.formattedSections.length; j++){
+				var section = obj.formattedSections[j];
+				if(section.sectionTitle == "Key Objectives"){
+					str+=section.bullets;
+				}
+			}
+			str+="</p>";
+		}
+	
+	console.log(objectives)
+
+
+	$('#results').append(str);
 }
 
+
+
 function printToScreen(){
+
+
+	if(FLAG=='key'){
+		listOnlyKeyObjectives();
+		return;
+	}
+
 	var entry = '';
 	var curIndex=0;
 	var isNewPara;
@@ -235,8 +349,11 @@ function parse(data){
 				title:results[i]['title']
 			}
 			
-			// if(results[i]['id']=="12-2" || results[i]['id']=="6-1"){
+
+			
 				objectives.push(obj);
+			
+			
 			
 			
 		}
