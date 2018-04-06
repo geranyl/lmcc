@@ -63,7 +63,7 @@ function flattenArr(arr){
 	return flattenArrHelper(arr,'');
 }	
 
-function addObjectiveDetails(obj, completionCount){
+function fetchObjectiveDetails(obj, completionCount){
 	//manage non id based entries
 
 		function count(){
@@ -72,6 +72,11 @@ function addObjectiveDetails(obj, completionCount){
 	  		if(callCount == completionCount){
 	  			console.log("all done");
 	  			$('#loading').remove();
+
+				for (var k=0; k<objectives.length; k++){
+					createOrganizedDataDetails(objectives[k]);
+				}
+
 	  			printToScreen();
 	  		}
 		}
@@ -180,71 +185,29 @@ function addDetails(obj){
 		return;	
 	} 
 
-	//require xml to keep appropriate order for nested lists
-	var xmlDoc = $.parseXML(obj.detailsXML);
-	var $xmlSnippet = $(xmlDoc).find('section');
+	var str='';
 	
-	var str = '';
-
-		//objectives that have been remapped - no section content
-	if(obj.detailsJSON.objective.crossRef){
-		var cross = obj.detailsJSON.objective.crossRef;
-		var wrapper = [];
-		if(!Array.isArray(cross)){
-			wrapper.push(cross);
-		}else{
-			wrapper = cross;
-		}
-		obj.crossReferences='';
-		for (var i=0; i<wrapper.length; i++){
-			obj.crossReferences += ''+wrapper[i]['$']['intro']+':<a href="#'+createAnchor(wrapper[i]['_'])+'">'+wrapper[i]['_']+'</a>';
-		}
+	if(obj.crossReferences){
+		str+=obj.crossReferences;
 	}
-	
-	
-	str+=obj.crossReferences;
 
 	str+='<div class="Rtable Rtable--1cols Rtable--collapse">';
 
+	console.log(obj)
+
+	for (var i=0; i<obj.formattedSections.length; i++){
+		var section = obj.formattedSections[i];
 
 
-	$.each(obj.detailsJSON.objective.section,function(index,value){
-
-		var elem='';
-		var title = value['$'].title;
-
-		var crossReferences = '';
-
-		if(title){
-			//inline crossreferences
-			if(typeof value.p == "object" && value.p.crossRef){
-				value.p.crossRef.forEach(function(e){
-					crossReferences+=e['_']+', ';
-				});
-				crossReferences = crossReferences.slice(0,-2);
-			}
-
-			//Add any bulleted lists to current section
-			var $currentSection = $xmlSnippet.filter("[title='"+title+"']");
-		
-
-			$.each($currentSection.children(), function(i,val){
-				if($(this).is('p')){
-					elem+='<p>'+$(this).text()+'</p>';
-				}else if ($(this).is('list')){
-					var bullets = getBase($(this),[]);	
-					elem += '<ul>'+flattenArr(bullets)+'</ul>';
-				}
-
-			});
+		if(section.sectionTitle){
 			
-			str+='<div class="Rtable-cell Rtable-cell--head"><h4>'+title+'</h4></div>';
+			str+='<div class="Rtable-cell Rtable-cell--head"><h4>'+section.sectionTitle+'</h4></div>';
 		
 			
-			
-			str+='<div class="Rtable-cell">'+crossReferences+elem+'</div>';
+			str+='<div class="Rtable-cell">'+section.crossReferences+section.bullets+'</div>';
 		}
-	});
+	}
+	
 	str+='</div>';
 	return str;	
 }
@@ -290,6 +253,8 @@ function printToScreen(){
 		return;
 	}
 
+
+
 	var entry = '';
 	var curIndex=0;
 	var isNewPara;
@@ -308,9 +273,7 @@ function printToScreen(){
 			}
 			entry+="<h3>"+objectives[i].id+" "+objectives[i].title+"</h3>";
 			entry+=addDetails(objectives[i]);
-			for (var j=0; j<objectives[i].bulletindex; j++){
-				entry+="";
-			}
+			
 		}else{
 			var anchor = createAnchor(objectives[i].title);
 			entry+='<h2 class="section-header" id="'+anchor+'">'+objectives[i].index+ " "+objectives[i].title+"</h2>";
@@ -363,7 +326,7 @@ function parse(data){
 	$('#total').text(objectives.length);
 
 	for (var i=0; i<objectives.length; i++){
-		addObjectiveDetails(objectives[i], objectives.length);
+		fetchObjectiveDetails(objectives[i], objectives.length);
 	}
 
 	
