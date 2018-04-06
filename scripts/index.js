@@ -1,0 +1,261 @@
+
+
+function returnSum(val){
+	var transitionIndex = val.id.split(/-|\./);
+	var summation = parseInt(transitionIndex[0]);
+	for (var i=1; i<transitionIndex.length; i++){
+		summation+=parseInt(transitionIndex[i])/Math.pow(10,i);
+	}
+	if(isNaN(summation)) summation = -1;
+	return summation;
+}
+
+
+function sortByIndex(x,y){
+	return returnSum(x) - returnSum(y);
+}
+
+var callCount = 0;
+var objectives = [];
+
+function addObjectiveDetails(obj, completionCount){
+	//manage non id based entries
+		if(!parseInt(obj.id)) {
+			callCount++;
+	  		if(callCount == completionCount){
+	  			console.log("all done");
+	  			printToScreen();
+	  		}
+	  		return;
+		}
+		$.ajax({
+		crossOrigin: "true",
+	  	method: "GET",
+	  	url: "http://apps.mcc.ca/ObjectivesWS/ObjectivesWS.asmx/GetXMLObjective?lang=en&id="+obj.id,
+	  	dataType:"text"
+		}).fail(function(err) {
+	    console.log( "error",err );
+	  	})
+	  	.done(function(data) {
+	   	 console.log( "success");
+	   	 obj.detailsJSON = $.xml2json(data);
+	   	 obj.detailsXML = data;
+	  	})
+	  	.always(function(){
+	  		callCount++;
+	  		if(callCount == completionCount){
+	  			console.log("all done");
+	  			printToScreen();
+	  		}
+	  	});
+  
+}
+
+
+
+
+
+function getBaseHelper($obj,list){
+	var $children = $obj.children('list');
+	if($obj.children('li').length) {
+		$.each($obj.children(), function(i,val){
+			if($(this).is('li')){
+				list.push($(this));
+			}else if($(this).is('list')){
+				list.push(getBaseHelper($(this),[]))
+			}
+		});
+	}
+	return list;
+}
+
+function getBase($obj){
+	return getBaseHelper($obj,[]);
+}
+
+
+
+function flattenArrHelper(arr,str){
+	for (var i=0; i<arr.length; i++){
+		if(Array.isArray(arr[i])){
+			str+='<ul>';
+			str+=flattenArrHelper(arr[i],'');
+			str+='</ul>';
+		}else{
+			str+='<li>'+arr[i].text()+'</li>';
+		}
+	}
+	return str;
+}
+
+function flattenArr(arr){
+	return flattenArrHelper(arr,'');
+}	
+
+
+
+function addDetails(obj){
+
+	if(!obj.detailsJSON){
+		return;	
+	} 
+
+	//require xml to keep appropriate order for nested lists
+	var xmlDoc = $.parseXML(obj.detailsXML);
+	var $xmlSnippet = $(xmlDoc).find('section');
+	
+	var str = '';
+
+		//objectives that have been remapped - no section content
+	if(obj.detailsJSON.objective.crossRef){
+		var cross = obj.detailsJSON.objective.crossRef;
+		var wrapper = [];
+		if(!Array.isArray(cross)){
+			wrapper.push(cross);
+		}
+		for (var i=0; i<wrapper.length; i++){
+			obj.crossReferences = wrapper[i]['$']['intro']+": "+wrapper[i]['_'];
+			str+=obj.crossReferences;
+		}
+	}
+	
+	
+
+
+	str+='<div class=Rtable Rtable--2cols Rtable--collapse">';
+
+
+
+	$.each(obj.detailsJSON.objective.section,function(index,value){
+		var elem='';
+		var title = value['$'].title;
+
+		var crossReferences = '';
+
+		//inline crossreferences
+		if(typeof value.p == "object" && value.p.crossRef){
+			value.p.crossRef.forEach(function(e){
+				crossReferences+=e['_']+', ';
+			});
+			crossReferences = crossReferences.slice(0,-2);
+		}
+
+		//Add any bulleted lists to current section
+		var $currentSection = $xmlSnippet.filter("[title='"+title+"']");
+	
+
+		$.each($currentSection.children(), function(i,val){
+			if($(this).is('p')){
+				elem+='<p>'+$(this).text()+'</p>';
+			}else if ($(this).is('list')){
+				var bullets = getBase($(this),[]);	
+				elem += '<ul>'+flattenArr(bullets)+'</ul>';
+			}
+
+		});
+		
+		str+='<div class="Rtable-cell Rtable-cell--head"><h4>'+title+'</h4></div>';
+	
+		
+		
+		str+='<div class="Rtable-cell">'+crossReferences+elem+'</div>';
+
+	});
+	str+='</div>';
+	return str;
+	
+}
+
+function printToScreen(){
+	var entry = '';
+	var curIndex=0;
+	var isNewPara;
+	var toc = '';
+	var toc2 = '';
+	var splitIndex = 71;
+	var titleCount = 0;
+	for (var i=0; i<objectives.length; i++){
+		isNewPara = objectives[i].index - curIndex;
+		if(isNewPara){
+			entry+="<p>";
+		}
+		if(objectives[i].bulletindex>0){
+			for (var j=0; j<objectives[i].bulletindex; j++){
+				entry+="<ul>";
+			}
+			entry+="<li><h3>"+objectives[i].id+" "+objectives[i].title+"</h3> ";
+			entry+=addDetails(objectives[i]);
+			for (var j=0; j<objectives[i].bulletindex; j++){
+				entry+="</ul>";
+			}
+		}else{
+			var anchor = objectives[i].title.replace(/(\W|\s)+/g,'-');
+			entry+='<h2 class="section-header" id="'+anchor+'">'+objectives[i].index+ " "+objectives[i].title+"</h2>";
+			entry+=addDetails(objectives[i]);
+			titleCount++;
+			if(titleCount<splitIndex){
+				toc+='<li><a href="#'+anchor+'">'+objectives[i].title+'</a></li>';
+			}else{
+				toc2+='<li><a href="#'+anchor+'">'+objectives[i].title+'</a></li>';
+			}
+		}
+
+		if(isNewPara){
+			entry+="</p>";
+		}
+
+		curIndex=objectives[i].index;
+	}
+	$('#results').append('<div class="toc"><div class="Rtable Rtable--2cols"><div class="Rtable-cell" style="order:1;"><ol>'+toc+'</ol></div><div class="Rtable-cell" style="order:2;"><ol start="'+splitIndex+'">'+toc2+'</ol></div></div></div>');
+	$('#results').append(entry);
+	
+}
+
+
+function parse(data){
+	var results = data.root.results.result;
+	for (var i=0; i<results.length; i++){
+		var role = results[i]['role'];
+		var listIndex = (results[i]['id'].split(/-|\./));
+		var indexId = parseInt(listIndex[0]) || 0;
+		if(role=='expert' && indexId){
+			var obj={
+				index:indexId,
+				bulletindex:listIndex.length-1,
+				id:results[i]['id'],
+				title:results[i]['title']
+			}
+			
+			// if(results[i]['id']=="12-2" || results[i]['id']=="6-1"){
+				objectives.push(obj);
+			
+		}
+	};
+
+	objectives.sort(sortByIndex);
+
+	for (var i=0; i<objectives.length; i++){
+		addObjectiveDetails(objectives[i], objectives.length);
+	}
+
+	
+}
+
+
+
+$.ajax({
+	crossOrigin: "true",
+  method: "GET",
+  url: "http://apps.mcc.ca/ObjectivesWS/ObjectivesWS.asmx/GetList?lang=en&sort=title",
+  dataType:"text"
+  
+}).fail(function(err) {
+    console.log( "error",err );
+  })
+  .done(function( data ) {
+    console.log( "success");
+    parse($.xml2json(data));
+  });
+
+
+
