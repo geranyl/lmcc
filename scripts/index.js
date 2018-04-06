@@ -81,9 +81,9 @@ function getBase($obj){
 function flattenArrHelper(arr,str){
 	for (var i=0; i<arr.length; i++){
 		if(Array.isArray(arr[i])){
-			str+='<ul>';
+			str+='<li><ul>';
 			str+=flattenArrHelper(arr[i],'');
-			str+='</ul>';
+			str+='</ul></li>';
 		}else{
 			str+='<li>'+arr[i].text()+'</li>';
 		}
@@ -117,7 +117,7 @@ function addDetails(obj){
 			wrapper.push(cross);
 		}
 		for (var i=0; i<wrapper.length; i++){
-			obj.crossReferences = '<p>'+wrapper[i]['$']['intro']+':<a href="#'+createAnchor(wrapper[i]['_'])+'">'+wrapper[i]['_']+'</a></p>';
+			obj.crossReferences = ''+wrapper[i]['$']['intro']+':<a href="#'+createAnchor(wrapper[i]['_'])+'">'+wrapper[i]['_']+'</a>';
 			str+=obj.crossReferences;
 		}
 	}
@@ -125,48 +125,49 @@ function addDetails(obj){
 	
 
 
-	str+='<div class="Rtable Rtable--2cols Rtable--collapse">';
+	str+='<div class="Rtable Rtable--1cols Rtable--collapse">';
 
 
 
 	$.each(obj.detailsJSON.objective.section,function(index,value){
+
 		var elem='';
 		var title = value['$'].title;
 
 		var crossReferences = '';
 
-		//inline crossreferences
-		if(typeof value.p == "object" && value.p.crossRef){
-			value.p.crossRef.forEach(function(e){
-				crossReferences+=e['_']+', ';
-			});
-			crossReferences = crossReferences.slice(0,-2);
-		}
-
-		//Add any bulleted lists to current section
-		var $currentSection = $xmlSnippet.filter("[title='"+title+"']");
-	
-
-		$.each($currentSection.children(), function(i,val){
-			if($(this).is('p')){
-				elem+='<p>'+$(this).text()+'</p>';
-			}else if ($(this).is('list')){
-				var bullets = getBase($(this),[]);	
-				elem += '<ul>'+flattenArr(bullets)+'</ul>';
+		if(title){
+			//inline crossreferences
+			if(typeof value.p == "object" && value.p.crossRef){
+				value.p.crossRef.forEach(function(e){
+					crossReferences+=e['_']+', ';
+				});
+				crossReferences = crossReferences.slice(0,-2);
 			}
 
-		});
+			//Add any bulleted lists to current section
+			var $currentSection = $xmlSnippet.filter("[title='"+title+"']");
 		
-		str+='<div class="Rtable-cell Rtable-cell--head"><h4>'+title+'</h4></div>';
-	
-		
-		
-		str+='<div class="Rtable-cell">'+crossReferences+elem+'</div>';
 
+			$.each($currentSection.children(), function(i,val){
+				if($(this).is('p')){
+					elem+='<p>'+$(this).text()+'</p>';
+				}else if ($(this).is('list')){
+					var bullets = getBase($(this),[]);	
+					elem += '<ul>'+flattenArr(bullets)+'</ul>';
+				}
+
+			});
+			
+			str+='<div class="Rtable-cell Rtable-cell--head"><h4>'+title+'</h4></div>';
+		
+			
+			
+			str+='<div class="Rtable-cell">'+crossReferences+elem+'</div>';
+		}
 	});
 	str+='</div>';
-	return str;
-	
+	return str;	
 }
 
 function createAnchor(str){
@@ -189,12 +190,12 @@ function printToScreen(){
 		}
 		if(objectives[i].bulletindex>0){
 			for (var j=0; j<objectives[i].bulletindex; j++){
-				entry+="<ul>";
+				entry+="";
 			}
-			entry+="<li><h3>"+objectives[i].id+" "+objectives[i].title+"</h3> ";
+			entry+="<h3>"+objectives[i].id+" "+objectives[i].title+"</h3>";
 			entry+=addDetails(objectives[i]);
 			for (var j=0; j<objectives[i].bulletindex; j++){
-				entry+="</ul>";
+				entry+="";
 			}
 		}else{
 			var anchor = createAnchor(objectives[i].title);
@@ -236,6 +237,7 @@ function parse(data){
 			
 			// if(results[i]['id']=="12-2" || results[i]['id']=="6-1"){
 				objectives.push(obj);
+			
 			
 		}
 	};
