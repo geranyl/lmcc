@@ -227,7 +227,7 @@ function listOnlyKeyObjectives(){
 
 			for (var j=0; j<obj.formattedSections.length; j++){
 				var section = obj.formattedSections[j];
-				if(section.sectionTitle == "Key Objectives"){
+				if(section.sectionTitle == "Key Objectives" || section.sectionTitle == "Key Objective"){
 					str+=section.bullets;
 				}
 			}
