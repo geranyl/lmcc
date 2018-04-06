@@ -255,10 +255,10 @@ function parse(data){
 
 
 $.ajax({
-	crossOrigin: "true",
   method: "GET",
   url: "https://apps.mcc.ca/ObjectivesWS/ObjectivesWS.asmx/GetList?lang=en&sort=title",
-  dataType:"text"
+  dataType: 'text',
+  crossOrigin: true
   
 }).fail(function(err) {
     console.log( "error",err );
