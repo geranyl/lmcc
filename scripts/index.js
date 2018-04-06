@@ -114,15 +114,16 @@ function addDetails(obj){
 			wrapper.push(cross);
 		}
 		for (var i=0; i<wrapper.length; i++){
-			obj.crossReferences = wrapper[i]['$']['intro']+": "+wrapper[i]['_'];
+			obj.crossReferences = '<p>'+wrapper[i]['$']['intro']+':<a href="#'+createAnchor(wrapper[i]['_'])+'">'+wrapper[i]['_']+'</a></p>';
 			str+=obj.crossReferences;
+			console.log(str)
 		}
 	}
 	
 	
 
 
-	str+='<div class=Rtable Rtable--2cols Rtable--collapse">';
+	str+='<div class="Rtable Rtable--2cols Rtable--collapse">';
 
 
 
@@ -138,6 +139,7 @@ function addDetails(obj){
 				crossReferences+=e['_']+', ';
 			});
 			crossReferences = crossReferences.slice(0,-2);
+			console.log(crossReferences)
 		}
 
 		//Add any bulleted lists to current section
@@ -166,6 +168,11 @@ function addDetails(obj){
 	
 }
 
+function createAnchor(str){
+	str = str.replace(/(\d|\W)+/g,'-').toLowerCase();
+	return str.replace(/^-|-$/gm,'');
+}
+
 function printToScreen(){
 	var entry = '';
 	var curIndex=0;
@@ -189,7 +196,7 @@ function printToScreen(){
 				entry+="</ul>";
 			}
 		}else{
-			var anchor = objectives[i].title.replace(/(\W|\s)+/g,'-');
+			var anchor = createAnchor(objectives[i].title);
 			entry+='<h2 class="section-header" id="'+anchor+'">'+objectives[i].index+ " "+objectives[i].title+"</h2>";
 			entry+=addDetails(objectives[i]);
 			titleCount++;
