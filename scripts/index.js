@@ -20,12 +20,19 @@ var objectives = [];
 
 function addObjectiveDetails(obj, completionCount){
 	//manage non id based entries
-		if(!parseInt(obj.id)) {
+
+		function count(){
 			callCount++;
+			$('#count').text(callCount);
 	  		if(callCount == completionCount){
 	  			console.log("all done");
+	  			$('#loading').remove();
 	  			printToScreen();
 	  		}
+		}
+
+		if(!parseInt(obj.id)) {
+			count();
 	  		return;
 		}
 		$.ajax({
@@ -42,11 +49,7 @@ function addObjectiveDetails(obj, completionCount){
 	   	 obj.detailsXML = data;
 	  	})
 	  	.always(function(){
-	  		callCount++;
-	  		if(callCount == completionCount){
-	  			console.log("all done");
-	  			printToScreen();
-	  		}
+	  		count();
 	  	});
   
 }
@@ -238,6 +241,7 @@ function parse(data){
 	};
 
 	objectives.sort(sortByIndex);
+	$('#total').text(objectives.length);
 
 	for (var i=0; i<objectives.length; i++){
 		addObjectiveDetails(objectives[i], objectives.length);
