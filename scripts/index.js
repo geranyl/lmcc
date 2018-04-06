@@ -31,7 +31,7 @@ function addObjectiveDetails(obj, completionCount){
 		$.ajax({
 		crossOrigin: "true",
 	  	method: "GET",
-	  	url: "http://apps.mcc.ca/ObjectivesWS/ObjectivesWS.asmx/GetXMLObjective?lang=en&id="+obj.id,
+	  	url: "https://apps.mcc.ca/ObjectivesWS/ObjectivesWS.asmx/GetXMLObjective?lang=en&id="+obj.id,
 	  	dataType:"text"
 		}).fail(function(err) {
 	    console.log( "error",err );
@@ -116,7 +116,6 @@ function addDetails(obj){
 		for (var i=0; i<wrapper.length; i++){
 			obj.crossReferences = '<p>'+wrapper[i]['$']['intro']+':<a href="#'+createAnchor(wrapper[i]['_'])+'">'+wrapper[i]['_']+'</a></p>';
 			str+=obj.crossReferences;
-			console.log(str)
 		}
 	}
 	
@@ -139,7 +138,6 @@ function addDetails(obj){
 				crossReferences+=e['_']+', ';
 			});
 			crossReferences = crossReferences.slice(0,-2);
-			console.log(crossReferences)
 		}
 
 		//Add any bulleted lists to current section
@@ -253,7 +251,7 @@ function parse(data){
 $.ajax({
 	crossOrigin: "true",
   method: "GET",
-  url: "http://apps.mcc.ca/ObjectivesWS/ObjectivesWS.asmx/GetList?lang=en&sort=title",
+  url: "https://apps.mcc.ca/ObjectivesWS/ObjectivesWS.asmx/GetList?lang=en&sort=title",
   dataType:"text"
   
 }).fail(function(err) {
