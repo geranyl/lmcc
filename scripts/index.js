@@ -3,7 +3,25 @@
 var callCount = 0;
 var objectives = [];
 
-var FLAG = 'key';//what to print
+var FLAG = '';//what to print
+
+
+var createCORSRequest = function(method, url) {
+  var xhr = new XMLHttpRequest();
+  if ("withCredentials" in xhr) {
+    // Most browsers.
+    xhr.open(method, url, true);
+  } else if (typeof XDomainRequest != "undefined") {
+    // IE8 & IE9
+    xhr = new XDomainRequest();
+    xhr.open(method, url);
+  } else {
+    // CORS not supported.
+    console.log('cors not supported')
+    xhr = null;
+  }
+  return xhr;
+};
 
 function returnSum(val){
 	var transitionIndex = val.id.split(/-|\./);
@@ -85,22 +103,50 @@ function fetchObjectiveDetails(obj, completionCount){
 			count();
 	  		return;
 		}
-		$.ajax({
-		crossOrigin: "true",
-	  	method: "GET",
-	  	url: "https://apps.mcc.ca/ObjectivesWS/ObjectivesWS.asmx/GetXMLObjective?lang=en&id="+obj.id,
-	  	dataType:"text"
-		}).fail(function(err) {
-	    console.log( "error",err );
-	  	})
-	  	.done(function(data) {
-	   	 console.log( "success");
-	   	 obj.detailsJSON = $.xml2json(data);
-	   	 obj.detailsXML = data;
-	  	})
-	  	.always(function(){
-	  		count();
-	  	});
+
+
+		
+
+		var url = 'https://apps.mcc.ca/ObjectivesWS/ObjectivesWS.asmx/GetXMLObjective?lang=en&id='+obj.id;
+		
+		var method = 'GET';
+		var xhr = createCORSRequest(method, url);
+
+		xhr.onload = function() {
+		  // Success code goes here.
+		  	console.log('success!')
+		   	obj.detailsJSON = $.xml2json(xhr.responseText);
+	   	 	obj.detailsXML = xhr.responseText;
+		 	count();
+		};
+
+		xhr.onerror = function() {
+		  // Error code goes here.
+		  console.log('fail');
+		  count();
+		};
+
+		xhr.send();
+		
+
+
+
+		// $.ajax({
+		// crossOrigin: "true",
+	 //  	method: "GET",
+	 //  	url: "https://apps.mcc.ca/ObjectivesWS/ObjectivesWS.asmx/GetXMLObjective?lang=en&id="+obj.id,
+	 //  	dataType:"text"
+		// }).fail(function(err) {
+	 //    console.log( "error",err );
+	 //  	})
+	 //  	.done(function(data) {
+	 //   	 console.log( "success");
+	 //   	 obj.detailsJSON = $.xml2json(data);
+	 //   	 obj.detailsXML = data;
+	 //  	})
+	 //  	.always(function(){
+	 //  		count();
+	 //  	});
   
 }
 
@@ -331,19 +377,41 @@ function parse(data){
 
 
 
-$.ajax({
-  method: "GET",
-  url: "https://apps.mcc.ca/ObjectivesWS/ObjectivesWS.asmx/GetList?lang=en&sort=title",
-  dataType: 'text',
-  crossOrigin: true
+
+// $.ajax({
+//   method: "GET",
+//   url: "https://apps.mcc.ca/ObjectivesWS/ObjectivesWS.asmx/GetList?lang=en&sort=title",
+//   dataType: 'text/plain',
+//   crossOrigin: true
   
-}).fail(function(err) {
-    console.log( "error",err );
-  })
-  .done(function( data ) {
-    console.log( "success");
-    parse($.xml2json(data));
-  });
+// }).fail(function(err) {
+//     console.log( "error",err );
+//   })
+//   .done(function( data ) {
+//     console.log( "success");
+//     parse($.xml2json(data));
+//   });
 
 
+
+fetchList();
+
+function fetchList (){
+	var url = 'https://apps.mcc.ca/ObjectivesWS/ObjectivesWS.asmx/GetList?lang=en&sort=title';
+	var method = 'GET';
+	var xhr = createCORSRequest(method, url);
+
+	xhr.onload = function() {
+	  // Success code goes here.
+	  console.log('success!')
+	  parse($.xml2json(xhr.responseText));
+	};
+
+	xhr.onerror = function() {
+	  // Error code goes here.
+	  console.log('fail')
+	};
+
+	xhr.send();
+}
 
