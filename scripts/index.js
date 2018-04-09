@@ -3,7 +3,10 @@
 var callCount = 0;
 var objectives = [];
 
-var FLAG = 'key';//what to print
+var FLAG = 'list';//what to print - options: key = key objectives, list = specifics for objective #s
+
+var list=['22-1','22-2','22-3', '41', '116', '24','35','39','41','61'];
+
 
 function returnSum(val){
 	var transitionIndex = val.id.split(/-|\./);
@@ -77,7 +80,11 @@ function fetchObjectiveDetails(obj, completionCount){
 					createOrganizedDataDetails(objectives[k]);
 				}
 
-	  			printToScreen();
+				if (FLAG=='list'){
+					printSpecificObjectives();
+				}else{
+	  				printToScreen();
+	  			}
 	  		}
 		}
 
@@ -233,10 +240,27 @@ function listOnlyKeyObjectives(){
 			}
 			str+="</p>";
 		}
-	
-	console.log(objectives)
 
+	$('#results').append(str);
+}
 
+function printSpecificObjectives(){
+	var str='';
+
+	for (var i=0; i<objectives.length; i++){
+		var obj = objectives[i];
+		str+='<p><h3>'+obj.id+' '+obj.title+'</h3>';
+		for (var j=0; j<obj.formattedSections.length; j++){
+			var section = obj.formattedSections[j];
+			if(section.sectionTitle!='Rationale'){
+				str+='<strong>'+section.sectionTitle+'</strong>';
+				str+=section.bullets;
+			}
+			
+		}
+
+		str+="</p><hr/>";
+	}
 	$('#results').append(str);
 }
 
@@ -247,6 +271,9 @@ function printToScreen(){
 
 	if(FLAG=='key'){
 		listOnlyKeyObjectives();
+		return;
+	}else if(FLAG=='list'){
+		printSpecificObjectives();
 		return;
 	}
 
@@ -310,11 +337,15 @@ function parse(data){
 			}
 			
 
-			
+			if(FLAG=='list'){
+				for (var j=0; j<list.length; j++){
+					if(obj.id==list[j]){
+						objectives.push(obj);
+					}
+				}
+			}else{ 
 				objectives.push(obj);
-			
-			
-			
+			}	
 			
 		}
 	};
