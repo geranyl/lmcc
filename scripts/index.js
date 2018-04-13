@@ -4,7 +4,7 @@ var callCount = 0;
 var objectives = [];
 
 
-var FLAG = 'list';//what to print - options: key = key objectives, list = specifics for objective #s
+var FLAG = '';//what to print - options: key = key objectives, list = specifics for objective #s
 
 // var list=['22-1','22-2','22-3', '41', '116', '24','35','39','47-1','61']; //April 9
 var list=['49','52','92','117','4','71-1'];
@@ -55,9 +55,9 @@ function getBase($obj){
 function flattenArrHelper(arr,str){
 	for (var i=0; i<arr.length; i++){
 		if(Array.isArray(arr[i])){
-			str+='<li><ul>';
+			str+='<ul>';
 			str+=flattenArrHelper(arr[i],'');
-			str+='</ul></li>';
+			str+='</ul>';
 		}else{
 			str+='<li>'+arr[i].text()+'</li>';
 		}
@@ -199,28 +199,29 @@ function addDetails(obj){
 
 	var str='';
 	
-	if(obj.crossReferences){
-		str+=obj.crossReferences;
-	}
 
-	str+='<div class="Rtable Rtable--1cols Rtable--collapse">';
-
-	console.log(obj)
-
-	for (var i=0; i<obj.formattedSections.length; i++){
-		var section = obj.formattedSections[i];
-
-
-		if(section.sectionTitle){
-			
-			str+='<div class="Rtable-cell Rtable-cell--head"><h4>'+section.sectionTitle+'</h4></div>';
-		
-			
-			str+='<div class="Rtable-cell">'+section.crossReferences+section.bullets+'</div>';
+	if(obj.formattedSections.length){
+		if(obj.crossReferences){
+			str+=obj.crossReferences;
 		}
+
+		str+='<div class="Rtable Rtable--1cols Rtable--collapse">';
+
+		for (var i=0; i<obj.formattedSections.length; i++){
+			var section = obj.formattedSections[i];
+
+
+			if(section.sectionTitle){
+				
+				str+='<div class="Rtable-cell Rtable-cell--head"><h4>'+section.sectionTitle+'</h4></div>';
+			
+				
+				str+='<div class="Rtable-cell">'+section.crossReferences+section.bullets+'</div>';
+			}
+		}
+		
+		str+='</div>';
 	}
-	
-	str+='</div>';
 	return str;	
 }
 
@@ -291,10 +292,15 @@ function printToScreen(){
 	var toc2 = '';
 	var splitIndex = 71;
 	var titleCount = 0;
+
 	for (var i=0; i<objectives.length; i++){
+
 		isNewPara = objectives[i].index - curIndex;
+		if(isNewPara && curIndex){
+			entry+="</div>";
+		}
 		if(isNewPara){
-			entry+="<p>";
+			entry+="<div>";
 		}
 		if(objectives[i].bulletindex>0){
 			for (var j=0; j<objectives[i].bulletindex; j++){
@@ -315,13 +321,12 @@ function printToScreen(){
 			}
 		}
 
-		if(isNewPara){
-			entry+="</p>";
-		}
+
+		
 
 		curIndex=objectives[i].index;
 	}
-	$('#results').append('<div class="toc"><div class="Rtable Rtable--2cols"><div class="Rtable-cell" style="order:1;"><ol>'+toc+'</ol></div><div class="Rtable-cell" style="order:2;"><ol start="'+splitIndex+'">'+toc2+'</ol></div></div></div>');
+	$('#results').append('<div class="toc"><div class="Rtable Rtable--2cols Rtable--collapse"><div class="Rtable-cell" style="order:1;"><ol>'+toc+'</ol></div><div class="Rtable-cell" style="order:2;"><ol start="'+splitIndex+'">'+toc2+'</ol></div></div></div>');
 	$('#results').append(entry);
 	
 }
@@ -333,6 +338,7 @@ function parse(data){
 		var role = results[i]['role'];
 		var listIndex = (results[i]['id'].split(/-|\./));
 		var indexId = parseInt(listIndex[0]) || 0;
+
 		if(role=='expert' && indexId){
 			var obj={
 				index:indexId,
@@ -340,7 +346,6 @@ function parse(data){
 				id:results[i]['id'],
 				title:results[i]['title']
 			}
-			
 
 			if(FLAG=='list'){
 				for (var j=0; j<list.length; j++){
