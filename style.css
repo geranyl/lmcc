@@ -1,18 +1,15 @@
 /* Page styling
 ================================== */
 html {
-  height: 100%;
+  /*height: 100%;*/
 }
 body {
 	 -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
           box-sizing: border-box;
   min-height: 100%;
   margin: 0 auto;
   padding: 2em;
-	 -moz-box-sizing: border-box;
-	-webkit-box-sizing: border-box;
-	box-sizing: border-box;
-  min-height: 100%;
   font-family: 'Open Sans Condensed', sans-serif;
   font-size: 0.8em;
 }
@@ -71,7 +68,15 @@ aqua 65feff;
 brick cc483d;
 */
 
-.toc{}
+.toc{
+
+}
+
+.toc ol{
+  list-style-position: inside;
+  padding-left:0;
+}
+
 /* Variables
 ================================== */
 /* Tables

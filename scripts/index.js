@@ -6,7 +6,8 @@ var objectives = [];
 
 var FLAG = 'list';//what to print - options: key = key objectives, list = specifics for objective #s
 
-var list=['22-1','22-2','22-3', '41', '116', '24','35','39','41','61'];
+// var list=['22-1','22-2','22-3', '41', '116', '24','35','39','47-1','61']; //April 9
+var list=['49','52','92','117','4','71-1'];
 
 
 
@@ -370,7 +371,7 @@ function parse(data){
 $.ajax({
   method: "GET",
   url: "https://apps.mcc.ca/ObjectivesWS/ObjectivesWS.asmx/GetList?lang=en&sort=title",
-  dataType: 'text/plain',
+  dataType: 'text',
   crossOrigin: true
   
 }).fail(function(err) {
