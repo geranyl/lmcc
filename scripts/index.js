@@ -7,7 +7,7 @@ var objectives = [];
 var FLAG = '';//what to print - options: key = key objectives, list = specifics for objective #s
 
 // var list=['22-1','22-2','22-3', '41', '116', '24','35','39','47-1','61']; //April 9
-var list=['49','52','92','117','4','71-1'];
+var list=['109','110', '109-10'];
 
 
 
@@ -15,7 +15,7 @@ function returnSum(val){
 	var transitionIndex = val.id.split(/-|\./);
 	var summation = parseInt(transitionIndex[0]);
 	for (var i=1; i<transitionIndex.length; i++){
-		summation+=parseInt(transitionIndex[i])/Math.pow(10,i);
+		summation+=parseInt(transitionIndex[i])/Math.pow(10,i+1);
 	}
 	if(isNaN(summation)) summation = -1;
 	return summation;
@@ -138,7 +138,7 @@ function createOrganizedDataDetails(obj){
 		}
 		obj.crossReferences='';
 		for (var i=0; i<wrapper.length; i++){
-			obj.crossReferences += ''+wrapper[i]['$']['intro']+':<a href="#'+createAnchor(wrapper[i]['_'])+'">'+wrapper[i]['_']+'</a>';
+			obj.crossReferences += wrapper[i]['$']['intro']+': '+wrapper[i]['_'];
 		}
 	}
 
@@ -198,12 +198,14 @@ function addDetails(obj){
 	} 
 
 	var str='';
+
 	
+	if(obj.crossReferences){
+		str+='<div class="removed-objective">'+obj.crossReferences+'</div>';
+	}
+
 
 	if(obj.formattedSections.length){
-		if(obj.crossReferences){
-			str+=obj.crossReferences;
-		}
 
 		str+='<div class="Rtable Rtable--1cols Rtable--collapse">';
 
@@ -294,6 +296,7 @@ function printToScreen(){
 	var titleCount = 0;
 
 	for (var i=0; i<objectives.length; i++){
+		
 
 		isNewPara = objectives[i].index - curIndex;
 		if(isNewPara && curIndex){
@@ -338,6 +341,8 @@ function parse(data){
 		var role = results[i]['role'];
 		var listIndex = (results[i]['id'].split(/-|\./));
 		var indexId = parseInt(listIndex[0]) || 0;
+
+
 
 		if(role=='expert' && indexId){
 			var obj={
